@@ -1,0 +1,11 @@
+# HTTP configuration
+:80 {
+    rewrite / /start
+    reverse_proxy localhost:5001
+}
+
+# HTTPS configuration
+random.xyz:443 {
+    rewrite / /start
+    reverse_proxy localhost:5001
+} 

